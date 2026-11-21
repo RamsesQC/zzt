@@ -269,6 +269,10 @@ export class Backend {
     this.inner.loadSavefile(gj);
   }
 
+  setComparisonConfiguration(gj: ProjectFeatureCollection | null) {
+    this.inner.setComparisonConfiguration(gj);
+  }
+
   changeProjectName(name: string) {
     this.inner.changeProjectName(name);
   }

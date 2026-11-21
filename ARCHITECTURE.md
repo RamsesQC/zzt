@@ -84,6 +84,13 @@ OSM state. Snapshots are configuration data, not separate MapLibre rendering
 layers. Stable geographic savefile features—not runtime road or intersection
 IDs—identify edits across reloads.
 
+Route and one-destination comparisons use the original OSM router by default.
+When a saved configuration is selected as the comparison baseline, the backend
+builds a separate router from that snapshot while leaving both the active
+editable state and the original OSM state intact. The active router remains the
+other side of the comparison. The Route B marker and destination X marker
+continue to trigger their respective analyses against this selected baseline.
+
 ## Entry points and UI
 
 | Area | Main files | Responsibility |

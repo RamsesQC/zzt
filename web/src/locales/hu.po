@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-30T11:22:11.919Z\n"
-"PO-Revision-Date: 2026-11-21T21:55:26.451Z\n"
+"PO-Revision-Date: 2026-11-21T22:13:58.294Z\n"
 "Last-Translator: \n"
 "Language: hu\n"
 "Language-Team: \n"
@@ -228,10 +228,8 @@ msgid ""
 "within the neighbourhood. Drag the pin around to change that destination."
 msgstr ""
 
-#: src/ImpactOneDestinationMode.svelte
-#: src/RouteMode.svelte
-msgid "Route before changes"
-msgstr ""
+#~ msgid "Route before changes"
+#~ msgstr ""
 
 #: src/ImpactOneDestinationMode.svelte
 #: src/ImpactOneDestinationMode.svelte
@@ -245,10 +243,8 @@ msgstr ""
 msgid "Hover on a road to compare"
 msgstr ""
 
-#: src/ImpactOneDestinationMode.svelte
-#: src/RouteMode.svelte
-msgid "Route after changes"
-msgstr ""
+#~ msgid "Route after changes"
+#~ msgstr ""
 
 #. placeholder {0}: (props.time_after / props.time_before).toFixed(1)
 #: src/ImpactOneDestinationMode.svelte
@@ -2580,4 +2576,18 @@ msgstr ""
 
 #: src/edit/NeighbourhoodMode.svelte
 msgid "Restore selected configuration"
+msgstr ""
+
+#: src/RouteMode.svelte
+#: src/ImpactOneDestinationMode.svelte
+msgid "Route in comparison configuration"
+msgstr ""
+
+#: src/RouteMode.svelte
+#: src/ImpactOneDestinationMode.svelte
+msgid "Route in active configuration"
+msgstr ""
+
+#: src/common/CompareConfigurationSelector.svelte
+msgid "Compare active configuration against: <0><0>Original OSM baseline</0> <1/></0>"
 msgstr ""

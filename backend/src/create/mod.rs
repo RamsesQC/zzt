@@ -106,6 +106,7 @@ pub fn create_from_osm(
         router_before: Router::empty(),
         router_after: None,
         router_before_with_penalty: None,
+        comparison_configuration: None,
 
         original_modal_filters: BTreeMap::new(),
         modal_filters: BTreeMap::new(),

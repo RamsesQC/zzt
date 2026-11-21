@@ -105,23 +105,30 @@ Acceptance checks:
 
 ## Phase 3: Compare two configurations for one destination
 
-Generalize the existing original-versus-edited comparison so it can route
-between two selected configurations. Then extend “Impact on One Destination”
-to support both directions.
+Generalize the existing original-versus-active comparison so the active
+configuration can be compared against either the original OSM baseline or any
+saved configuration. Use the same selected comparison baseline in “Route” and
+“Impact on One Destination”; moving B or X continues to update the analysis.
 
 Scope:
 
-- Build or reuse routers for the selected configuration pair and invalidate
-  cached results when either configuration changes.
-- Add configuration selection to the analysis UI.
+- Build/reuse a router for the selected saved baseline and invalidate cached
+  results when the baseline, active configuration, or main-road penalty
+  changes.
+- Add a shared comparison-baseline selector to Route and Impact on One
+  Destination. Default to the original OSM baseline to preserve current
+  behavior.
 - Retain the current outbound result and add the reverse, destination-to-road
   analysis using directed routing rules.
 - Clearly show when a route is unavailable in either configuration.
 
 Acceptance checks:
 
-- A route comparison uses the selected configurations, not implicitly the
-  original OSM state.
+- Both views compare active edits against the selected baseline; absent a
+  selection, they compare against the original OSM state.
+- Changing the selected baseline updates both route previews and
+  destination-wide results without changing the active edits or the original
+  “Show before edits” layer.
 - Inbound routes respect one-way streets and turn restrictions.
 - Changes to either selected configuration update the analysis.
 

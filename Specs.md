@@ -28,9 +28,11 @@ L’utilisateur devrait pouvoir :
 - changer la **Base Compare Layer** ;
 - effectuer des analyses comparatives entre deux configurations sélectionnées, par exemple avec **Impact on One Destination**.
 
-Les configurations enregistrées sont des instantanés de l’état modifiable du projet, et non de nouvelles couches cartographiques. La couche OSM d’origine doit rester distincte et continuer à être utilisée par **« Show Before Edits »**.
+Les configurations enregistrées sont des instantanés de l’état modifiable du projet, et non de nouvelles couches cartographiques. La couche OSM d’origine doit rester distincte et continuer à être utilisée par **« Show Before Edits »**. Pour les comparaisons, l’utilisateur peut choisir une configuration enregistrée comme référence ; par défaut, la référence reste la configuration OSM d’origine.
 
 Première étape : enregistrer une configuration nommée, recharger le projet et restaurer cette configuration. Après l’enregistrement, l’utilisateur continue à modifier la configuration active. Restaurer un instantané remplace l’état modifiable actif ; l’application demande confirmation avant ce remplacement. Les noms en double sont refusés dans cette première étape ; le renommage et la suppression pourront être ajoutés ultérieurement.
+
+Dans **« Route »** et **« Impact on One Destination »**, la comparaison oppose la configuration active à la référence sélectionnée. Le déplacement des marqueurs **B** ou **X** met à jour l’analyse, comme aujourd’hui. La référence peut être l’OSM d’origine ou n’importe quelle configuration enregistrée, afin de comparer les itérations d’un plan routier.
 
 ## 2. Reclassify Road
 
@@ -48,12 +50,14 @@ Une ruelle est une voie qui ne peut pas être utilisée comme itinéraire de tra
 
 Modifier l’analyse **« Impact on One Destination »** afin de comparer :
 
-- la configuration actuelle (**Base Compare Layer**) ;
-- une configuration comportant des déviateurs ajoutés.
+- la configuration active ;
+- la **Base Compare Layer**, qui peut être l’OSM d’origine ou toute configuration enregistrée.
 
 Actuellement, l’outil d’analyse affiche uniquement le temps de déplacement et la distance supplémentaires nécessaires pour sortir d’une destination.
 
 Il faudrait également réaliser le même type d’analyse pour les déplacements visant à entrer dans une destination, c’est-à-dire effectuer l’analyse inverse.
+
+Le déplacement du marqueur **X** doit recalculer la comparaison pour la référence sélectionnée.
 
 ## 4. Nouvel onglet d’analyse
 

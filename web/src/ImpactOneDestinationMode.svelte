@@ -24,11 +24,13 @@
     prettyPrintDistance,
     prettyPrintTime,
   } from "./common";
+  import CompareConfigurationSelector from "./common/CompareConfigurationSelector.svelte";
   import { colorByCellColor, ModalFilterLayer } from "./layers";
   import {
     backend,
     ensurePointInVisibleBounds,
     mode,
+    mutationCounter,
     oneDestination,
     routePtA,
     routePtB,
@@ -69,8 +71,14 @@
     // Move the first marker, for convenience
     $oneDestination = e.lngLat;
   }
-  let perRoadGj = $derived($backend!.impactToOneDestination($oneDestination));
-  let routeGj = $derived(previewRoutes(hovered));
+  let perRoadGj = $derived.by(() => {
+    $mutationCounter;
+    return $backend!.impactToOneDestination($oneDestination);
+  });
+  let routeGj = $derived.by(() => {
+    $mutationCounter;
+    return previewRoutes(hovered);
+  });
   let routeBefore = $derived(
     routeGj.features.find((f) => f.properties.kind == "before"),
   );
@@ -106,8 +114,9 @@
       This shows the change in driving time to one destination from everywhere
       within the neighbourhood. Drag the pin around to change that destination.
     </p>
+    <CompareConfigurationSelector />
 
-    <u style:color="red">Route before changes</u>
+    <u style:color="red">Route in comparison configuration</u>
     {#if routeBefore}
       <p>
         {prettyPrintDistance(routeBefore.properties.distance)}, {prettyPrintTime(
@@ -124,7 +133,7 @@
       <p>Hover on a road to compare</p>
     {/if}
 
-    <u style:color="blue">Route after changes</u>
+    <u style:color="blue">Route in active configuration</u>
     {#if routeAfter}
       <p>
         {prettyPrintDistance(routeAfter.properties.distance)}, {prettyPrintTime(

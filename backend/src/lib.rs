@@ -549,6 +549,18 @@ impl LTN {
         Ok(())
     }
 
+    #[wasm_bindgen(js_name = setComparisonConfiguration)]
+    pub fn set_comparison_configuration(&mut self, input: JsValue) -> Result<(), JsValue> {
+        let snapshot = if input.is_null() || input.is_undefined() {
+            None
+        } else {
+            Some(serde_wasm_bindgen::from_value(input)?)
+        };
+        self.map
+            .set_comparison_configuration(snapshot)
+            .map_err(err_to_js)
+    }
+
     #[wasm_bindgen(js_name = changeProjectName)]
     pub fn change_project_name(&mut self, name: String) {
         self.map

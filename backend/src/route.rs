@@ -464,6 +464,8 @@ impl Route {
 mod tests {
     use super::*;
     use crate::{osm_tests::load_osm_xml, FilterKind};
+    use geo::line_measures::InterpolatableLine;
+    use geojson::GeoJson;
 
     fn r(road_id: usize) -> RoadID {
         RoadID(road_id)
@@ -564,6 +566,54 @@ mod tests {
             .unwrap()
             .route_from_roads(&reloaded.router_input_after(), r(3), road)
             .is_none());
+    }
+
+    #[test]
+    fn route_comparison_uses_selected_saved_configuration_without_changing_active_edits() {
+        let mut map = load_osm_xml("simple_four_way_intersection");
+        let active_savefile = map.to_savefile();
+
+        map.toggle_driving_graph(r(2));
+        let comparison_savefile = map.to_savefile();
+        map.load_savefile(active_savefile).unwrap();
+
+        let pt1 = map
+            .get_r(r(3))
+            .linestring
+            .point_at_ratio_from_start(&Euclidean, 0.5)
+            .unwrap()
+            .into();
+        let pt2 = map
+            .get_r(r(2))
+            .linestring
+            .point_at_ratio_from_start(&Euclidean, 0.5)
+            .unwrap()
+            .into();
+
+        map.set_comparison_configuration(Some(comparison_savefile))
+            .unwrap();
+        assert!(map.is_in_driving_graph[&r(2)]);
+
+        let GeoJson::FeatureCollection(result) = map.compare_route(pt1, pt2, 1.0) else {
+            panic!("route comparison did not return a FeatureCollection");
+        };
+        let kinds: Vec<_> = result
+            .features
+            .iter()
+            .map(|feature| feature.property("kind").unwrap().as_str().unwrap())
+            .collect();
+        assert_eq!(kinds, vec!["after"]);
+
+        map.set_comparison_configuration(None).unwrap();
+        let GeoJson::FeatureCollection(result) = map.compare_route(pt1, pt2, 1.0) else {
+            panic!("route comparison did not return a FeatureCollection");
+        };
+        let kinds: Vec<_> = result
+            .features
+            .iter()
+            .map(|feature| feature.property("kind").unwrap().as_str().unwrap())
+            .collect();
+        assert_eq!(kinds, vec!["before", "after"]);
     }
 
     #[test]

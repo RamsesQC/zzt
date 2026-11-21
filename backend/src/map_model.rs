@@ -40,8 +40,10 @@ pub struct MapModel {
     pub router_before: Router,
     // Calculated lazily. Changes with edits and main_road_penalty.
     pub router_after: Option<Router>,
-    // Calculated lazily. No edits, just main_road_penalty.
+    // Calculated lazily for the selected comparison configuration.
     pub router_before_with_penalty: Option<Router>,
+    #[serde(skip)]
+    pub(crate) comparison_configuration: Option<ComparisonConfiguration>,
 
     // Just from the basemap, existing filters
     pub original_modal_filters: BTreeMap<RoadID, ModalFilter>,
@@ -292,6 +294,14 @@ pub struct ProjectDetails {
     pub study_area_name: Option<String>,
     pub project_name: String,
     pub db_schema_version: u32,
+}
+
+pub(crate) struct ComparisonConfiguration {
+    modal_filters: BTreeMap<RoadID, ModalFilter>,
+    diagonal_filters: BTreeMap<IntersectionID, DiagonalFilter>,
+    turn_restrictions: Vec<Vec<(RoadID, RoadID)>>,
+    travel_flows: BTreeMap<RoadID, TravelFlow>,
+    is_in_driving_graph: BTreeMap<RoadID, bool>,
 }
 
 impl MapModel {
@@ -835,6 +845,39 @@ impl MapModel {
         gj
     }
 
+    pub fn set_comparison_configuration(
+        &mut self,
+        snapshot: Option<FeatureCollection>,
+    ) -> Result<()> {
+        let Some(snapshot) = snapshot else {
+            self.comparison_configuration = None;
+            self.router_before_with_penalty = None;
+            return Ok(());
+        };
+
+        let active_savefile = self.to_savefile();
+        let undo_stack = std::mem::take(&mut self.undo_stack);
+        let redo_stack = std::mem::take(&mut self.redo_stack);
+
+        let comparison_configuration =
+            self.load_savefile(snapshot)
+                .map(|()| ComparisonConfiguration {
+                    modal_filters: self.modal_filters.clone(),
+                    diagonal_filters: self.diagonal_filters.clone(),
+                    turn_restrictions: self.turn_restrictions.clone(),
+                    travel_flows: self.travel_flows.clone(),
+                    is_in_driving_graph: self.is_in_driving_graph.clone(),
+                });
+        let restore_result = self.load_savefile(active_savefile);
+
+        self.undo_stack = undo_stack;
+        self.redo_stack = redo_stack;
+        self.router_before_with_penalty = None;
+        restore_result?;
+        self.comparison_configuration = Some(comparison_configuration?);
+        Ok(())
+    }
+
     pub fn load_savefile(&mut self, gj: FeatureCollection) -> Result<()> {
         // Clear previous state
         self.boundaries.clear();
@@ -1027,6 +1070,68 @@ impl MapModel {
         RouterInputBefore { map: self }
     }
 
+    pub fn router_input_comparison(&self) -> impl RouterInput + use<'_> {
+        struct RouterInputComparison<'a> {
+            map: &'a MapModel,
+            configuration: Option<&'a ComparisonConfiguration>,
+        }
+        impl RouterInput for RouterInputComparison<'_> {
+            fn roads_iter(&self) -> impl Iterator<Item = &Road> {
+                self.map.roads.iter()
+            }
+
+            fn closest_road(&self) -> &RTree<GeomWithData<LineString, RoadID>> {
+                &self.map.closest_road
+            }
+
+            fn get_r(&self, r: RoadID) -> &Road {
+                self.map.get_r(r)
+            }
+
+            fn get_i(&self, i: IntersectionID) -> &Intersection {
+                self.map.get_i(i)
+            }
+
+            fn modal_filter(&self, r: RoadID) -> Option<&ModalFilter> {
+                if let Some(configuration) = self.configuration {
+                    configuration.modal_filters.get(&r)
+                } else {
+                    self.map.original_modal_filters.get(&r)
+                }
+            }
+
+            fn is_in_driving_graph(&self, r: RoadID) -> bool {
+                self.configuration
+                    .map(|configuration| configuration.is_in_driving_graph[&r])
+                    .unwrap_or(true)
+            }
+
+            fn travel_flow(&self, r: RoadID) -> TravelFlow {
+                self.configuration
+                    .map(|configuration| configuration.travel_flows[&r])
+                    .unwrap_or_else(|| TravelFlow::from_osm(&self.map.get_r(r).tags))
+            }
+
+            fn diagonal_filter(&self, i: IntersectionID) -> Option<&DiagonalFilter> {
+                self.configuration
+                    .and_then(|configuration| configuration.diagonal_filters.get(&i))
+            }
+
+            fn turn_restrictions(&self, i: IntersectionID) -> &Vec<(RoadID, RoadID)> {
+                if let Some(configuration) = self.configuration {
+                    &configuration.turn_restrictions[i.0]
+                } else {
+                    &self.map.original_turn_restrictions[i.0]
+                }
+            }
+        }
+
+        RouterInputComparison {
+            map: self,
+            configuration: self.comparison_configuration.as_ref(),
+        }
+    }
+
     pub fn router_input_after(&self) -> impl RouterInput + use<'_> {
         struct RouterInputAfter<'a> {
             map: &'a MapModel,
@@ -1078,12 +1183,13 @@ impl MapModel {
             .map(|r| r.main_road_penalty != main_road_penalty)
             .unwrap_or(true)
         {
-            let router_before_with_penalty =
-                if self.router_before.main_road_penalty == main_road_penalty {
-                    self.router_before.clone()
-                } else {
-                    Router::new(&self.router_input_before(), main_road_penalty)
-                };
+            let router_before_with_penalty = if self.comparison_configuration.is_none()
+                && self.router_before.main_road_penalty == main_road_penalty
+            {
+                self.router_before.clone()
+            } else {
+                Router::new(&self.router_input_comparison(), main_road_penalty)
+            };
             self.router_before_with_penalty = Some(router_before_with_penalty);
         }
 
@@ -1101,12 +1207,13 @@ impl MapModel {
     pub fn compare_route(&mut self, pt1: Coord, pt2: Coord, main_road_penalty: f64) -> GeoJson {
         self.rebuild_router(main_road_penalty);
 
+        let router_input_before = self.router_input_comparison();
         let mut features = Vec::new();
         if let Some(route) = self
             .router_before_with_penalty
             .as_ref()
             .unwrap()
-            .route_from_points(&self.router_input_before(), pt1, pt2)
+            .route_from_points(&router_input_before, pt1, pt2)
         {
             let (distance, time) = route.get_distance_and_time(self);
             let mut f = self.mercator.to_wgs84_gj(&route.to_linestring(self));
@@ -1138,7 +1245,7 @@ impl MapModel {
         // main_road_penalty doesn't seem relevant for this question
         self.rebuild_router(1.0);
 
-        let router_input_before = self.router_input_before();
+        let router_input_before = self.router_input_comparison();
         let router_input_after = self.router_input_after();
 
         // From every road, calculate the route before and after to the one destination
