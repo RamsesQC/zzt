@@ -114,6 +114,9 @@ export let metricBuckets: Writable<MetricBuckets> = writable({
 export let routePtA: Writable<LngLat> = writable(new LngLat(0, 0));
 export let routePtB: Writable<LngLat> = writable(new LngLat(0, 0));
 export let oneDestination: Writable<LngLat> = writable(new LngLat(0, 0));
+export let comparisonConfiguration: Writable<
+  { projectID: ProjectID; name: string } | undefined
+> = writable(undefined);
 export let mainRoadPenalty: Writable<number> = writable(1.0);
 // A way for different components to know when internal app state has changed
 // and they might need to rerender

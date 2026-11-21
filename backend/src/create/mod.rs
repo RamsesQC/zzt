@@ -81,9 +81,11 @@ pub fn create_from_osm(
 
     let mut travel_flows = BTreeMap::new();
     let mut is_main_road = BTreeMap::new();
+    let mut is_in_driving_graph = BTreeMap::new();
     for r in &roads {
         travel_flows.insert(r.id, TravelFlow::from_osm(&r.tags));
         is_main_road.insert(r.id, r.is_severance());
+        is_in_driving_graph.insert(r.id, true);
     }
 
     let num_intersections = intersections.len();
@@ -104,6 +106,7 @@ pub fn create_from_osm(
         router_before: Router::empty(),
         router_after: None,
         router_before_with_penalty: None,
+        comparison_configuration: None,
 
         original_modal_filters: BTreeMap::new(),
         modal_filters: BTreeMap::new(),
@@ -118,6 +121,7 @@ pub fn create_from_osm(
 
         travel_flows,
         is_main_road,
+        is_in_driving_graph,
 
         impact: Some(Impact::default()),
         demand: None,

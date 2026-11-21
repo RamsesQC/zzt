@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-30T11:22:11.838Z\n"
-"PO-Revision-Date: 2025-10-13T14:55:28.463Z\n"
+"PO-Revision-Date: 2026-11-21T22:13:58.287Z\n"
 "Last-Translator: \n"
 "Language: en\n"
 "Language-Team: \n"
@@ -383,10 +383,8 @@ msgstr ""
 "This shows the change in driving time to one destination from everywhere\n"
 "within the neighbourhood. Drag the pin around to change that destination."
 
-#: src/ImpactOneDestinationMode.svelte
-#: src/RouteMode.svelte
-msgid "Route before changes"
-msgstr "Route before changes"
+#~ msgid "Route before changes"
+#~ msgstr "Route before changes"
 
 #: src/ImpactOneDestinationMode.svelte
 #: src/ImpactOneDestinationMode.svelte
@@ -400,10 +398,8 @@ msgstr "No possible route ( <0>This is usually a known software bug</0> )"
 msgid "Hover on a road to compare"
 msgstr "Hover on a road to compare"
 
-#: src/ImpactOneDestinationMode.svelte
-#: src/RouteMode.svelte
-msgid "Route after changes"
-msgstr "Route after changes"
+#~ msgid "Route after changes"
+#~ msgstr "Route after changes"
 
 #. placeholder {0}: (props.time_after / props.time_before).toFixed(1)
 #: src/ImpactOneDestinationMode.svelte
@@ -3003,3 +2999,96 @@ msgid ""
 msgstr ""
 "13 October 2025 - fix for animated shortcuts when showing the LTN\n"
 "before edits"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Toggle whether roads are used in driving routes (hotkey 5)"
+msgstr "Toggle whether roads are used in driving routes (hotkey 5)"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Toggle driving route eligibility"
+msgstr "Toggle driving route eligibility"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Driving graph"
+msgstr "Driving graph"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid ""
+"Click a road to include or exclude it from driving routes. Excluded\n"
+"roads remain visible on the map."
+msgstr ""
+"Click a road to include or exclude it from driving routes. Excluded\n"
+"roads remain visible on the map."
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Click to exclude from driving routes"
+msgstr "Click to exclude from driving routes"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Click to include in driving routes"
+msgstr "Click to include in driving routes"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Excluded from driving routes"
+msgstr "Excluded from driving routes"
+
+#: src/user_guide/Page.svelte
+msgid "Editing driving route eligibility"
+msgstr "Editing driving route eligibility"
+
+#: src/user_guide/Page.svelte
+msgid ""
+"Use the driving graph tool to include or exclude an existing road from\n"
+"driving routes. An excluded road stays visible on the map, but the\n"
+"router will not use it, including as a trip's origin or destination.\n"
+"This differs from a modal filter, which blocks movement at a point on a\n"
+"road."
+msgstr ""
+"Use the driving graph tool to include or exclude an existing road from\n"
+"driving routes. An excluded road stays visible on the map, but the\n"
+"router will not use it, including as a trip's origin or destination.\n"
+"This differs from a modal filter, which blocks movement at a point on a\n"
+"road."
+
+#: src/user_guide/Page.svelte
+msgid "16 March 2026 - fix for shortcuts when main roads have one-ways (see <0>details</0>)"
+msgstr "16 March 2026 - fix for shortcuts when main roads have one-ways (see <0>details</0>)"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Name this configuration"
+msgstr "Name this configuration"
+
+#. placeholder {0}: configuration.name
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore \"{0}\"? This will replace the active edits."
+msgstr "Restore \"{0}\"? This will replace the active edits."
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Saved configurations"
+msgstr "Saved configurations"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Save current configuration"
+msgstr "Save current configuration"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore configuration: <0><0>Select a saved configuration</0> <1/></0>"
+msgstr "Restore configuration: <0><0>Select a saved configuration</0> <1/></0>"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore selected configuration"
+msgstr "Restore selected configuration"
+
+#: src/RouteMode.svelte
+#: src/ImpactOneDestinationMode.svelte
+msgid "Route in comparison configuration"
+msgstr "Route in comparison configuration"
+
+#: src/RouteMode.svelte
+#: src/ImpactOneDestinationMode.svelte
+msgid "Route in active configuration"
+msgstr "Route in active configuration"
+
+#: src/common/CompareConfigurationSelector.svelte
+msgid "Compare active configuration against: <0><0>Original OSM baseline</0> <1/></0>"
+msgstr "Compare active configuration against: <0><0>Original OSM baseline</0> <1/></0>"

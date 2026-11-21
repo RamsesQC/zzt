@@ -12,6 +12,7 @@
     prettyPrintDistance,
     prettyPrintTime,
   } from "./common";
+  import CompareConfigurationSelector from "./common/CompareConfigurationSelector.svelte";
   import {
     CellLayer,
     HighlightBoundaryLayer,
@@ -24,6 +25,7 @@
     ensurePointInVisibleBounds,
     mainRoadPenalty,
     mode,
+    mutationCounter,
     routePtA,
     routePtB,
   } from "./stores";
@@ -37,9 +39,10 @@
   let neighbourhoodGj =
     prevMode == "neighbourhood" ? $backend!.renderNeighbourhood() : null;
 
-  let gj = $derived(
-    $backend!.compareRoute($routePtA, $routePtB, $mainRoadPenalty),
-  );
+  let gj = $derived.by(() => {
+    $mutationCounter;
+    return $backend!.compareRoute($routePtA, $routePtB, $mainRoadPenalty);
+  });
   let routeBefore = $derived(
     gj.features.find((f) => f.properties.kind == "before"),
   );
@@ -80,8 +83,9 @@
     <BackButton mode={{ mode: prevMode }} />
 
     <p>Drag markers for a route</p>
+    <CompareConfigurationSelector />
 
-    <u style:color="red">Route before changes</u>
+    <u style:color="red">Route in comparison configuration</u>
     {#if routeBefore}
       <p>
         {prettyPrintDistance(routeBefore.properties.distance)}, {prettyPrintTime(
@@ -96,7 +100,7 @@
       </p>
     {/if}
 
-    <u style:color="blue">Route after changes</u>
+    <u style:color="blue">Route in active configuration</u>
     {#if routeAfter}
       <p>
         {prettyPrintDistance(routeAfter.properties.distance)}, {prettyPrintTime(

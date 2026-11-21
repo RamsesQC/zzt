@@ -343,8 +343,10 @@ impl Neighbourhood {
             f.set_property(
                 "edited",
                 map.travel_flows[&r] != TravelFlow::from_osm(&road.tags)
-                    || map.modal_filters.get(&r) != map.original_modal_filters.get(&r),
+                    || map.modal_filters.get(&r) != map.original_modal_filters.get(&r)
+                    || !map.is_in_driving_graph[&r],
             );
+            f.set_property("is_in_driving_graph", map.is_in_driving_graph[&r]);
             f.set_property("road", r.0);
             if let Some(color) = derived.render_cells.colors_per_road.get(&r) {
                 f.set_property("cell_color", *color);
@@ -372,8 +374,10 @@ impl Neighbourhood {
             f.set_property(
                 "edited",
                 map.travel_flows[&r] != TravelFlow::from_osm(&road.tags)
-                    || map.modal_filters.get(&r) != map.original_modal_filters.get(&r),
+                    || map.modal_filters.get(&r) != map.original_modal_filters.get(&r)
+                    || !map.is_in_driving_graph[&r],
             );
+            f.set_property("is_in_driving_graph", map.is_in_driving_graph[&r]);
             f.set_property("road", r.0);
             if let Some(color) = derived.render_cells.colors_per_road.get(&r) {
                 f.set_property("cell_color", *color);
@@ -541,6 +545,10 @@ impl RouterInput for NeighbourhoodShortcutsRouterInput<'_> {
         } else {
             self.map.modal_filters.get(&r)
         }
+    }
+
+    fn is_in_driving_graph(&self, r: RoadID) -> bool {
+        self.before || self.map.is_in_driving_graph[&r]
     }
 
     fn travel_flow(&self, r: RoadID) -> TravelFlow {

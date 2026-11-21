@@ -168,6 +168,46 @@ describe("ProjectStorage", () => {
     });
   });
 
+  describe("saved configurations", () => {
+    it("round-trips named snapshots and preserves them when the active project is saved", () => {
+      const { projectStorage } = mockProjectStorage();
+      const projectID = projectStorage.createEmptyProject(
+        "Project Name",
+        "TestArea",
+      );
+      const snapshot = projectStorage.project(projectID);
+
+      projectStorage.saveConfiguration(projectID, "Plan A", snapshot);
+      expect(projectStorage.savedConfigurations(projectID)).toEqual([
+        { name: "Plan A", snapshot },
+      ]);
+
+      const activeProject = { ...snapshot, project_name: "Updated project" };
+      projectStorage.saveProject(projectID, activeProject);
+      expect(activeProject.saved_configurations).toBeUndefined();
+      expect(projectStorage.savedConfigurations(projectID)).toEqual([
+        { name: "Plan A", snapshot },
+      ]);
+    });
+
+    it("rejects empty and duplicate configuration names", () => {
+      const { projectStorage } = mockProjectStorage();
+      const projectID = projectStorage.createEmptyProject(
+        "Project Name",
+        "TestArea",
+      );
+      const snapshot = projectStorage.project(projectID);
+
+      expect(() =>
+        projectStorage.saveConfiguration(projectID, "  ", snapshot),
+      ).toThrow("Configuration name cannot be empty.");
+      projectStorage.saveConfiguration(projectID, "Plan A", snapshot);
+      expect(() =>
+        projectStorage.saveConfiguration(projectID, " plan a ", snapshot),
+      ).toThrow("Configuration name already exists: plan a");
+    });
+  });
+
   describe("studyAreas", () => {
     it("should list projects by study area", () => {
       let { projectStorage } = mockProjectStorage();

@@ -58,6 +58,9 @@ pub trait RouterInput {
     fn get_r(&self, r: RoadID) -> &Road;
     fn get_i(&self, i: IntersectionID) -> &Intersection;
     fn modal_filter(&self, r: RoadID) -> Option<&ModalFilter>;
+    fn is_in_driving_graph(&self, _r: RoadID) -> bool {
+        true
+    }
     fn has_modal_filter(&self, r: RoadID) -> bool {
         self.modal_filter(r).is_some()
     }
@@ -101,7 +104,8 @@ impl Router {
         let mut node_map = NodeMap::new();
 
         for road in router_input.roads_iter() {
-            if router_input.has_modal_filter(road.id) {
+            if router_input.has_modal_filter(road.id) || !router_input.is_in_driving_graph(road.id)
+            {
                 continue;
             }
             // Loops can't be part of a shortest path
@@ -187,6 +191,11 @@ impl Router {
         start: Position,
         end: Position,
     ) -> Option<Route> {
+        if !router_input.is_in_driving_graph(start.road)
+            || !router_input.is_in_driving_graph(end.road)
+        {
+            return None;
+        }
         if start == end {
             return None;
         }
@@ -455,6 +464,8 @@ impl Route {
 mod tests {
     use super::*;
     use crate::{osm_tests::load_osm_xml, FilterKind};
+    use geo::line_measures::InterpolatableLine;
+    use geojson::GeoJson;
 
     fn r(road_id: usize) -> RoadID {
         RoadID(road_id)
@@ -503,6 +514,106 @@ mod tests {
         assert!(router_after
             .route_from_roads(&map.router_input_after(), r(3), r(2))
             .is_none());
+    }
+
+    #[test]
+    fn driving_graph_edit_excludes_road_and_round_trips() {
+        let mut map = load_osm_xml("simple_four_way_intersection");
+        let road = r(2);
+
+        assert!(map
+            .router_before
+            .route_from_roads(&map.router_input_before(), r(3), road)
+            .is_some());
+
+        map.toggle_driving_graph(road);
+        assert!(!map.is_in_driving_graph[&road]);
+        map.undo();
+        assert!(map.is_in_driving_graph[&road]);
+        map.redo();
+        map.rebuild_router(1.0);
+        assert!(!map.is_in_driving_graph[&road]);
+        assert!(map.roads[road.0].linestring.0.len() > 1);
+        assert!(map
+            .router_after
+            .as_ref()
+            .unwrap()
+            .node_map
+            .get((road, Direction::Forwards))
+            .is_none());
+        assert!(map
+            .router_after
+            .as_ref()
+            .unwrap()
+            .node_map
+            .get((road, Direction::Backwards))
+            .is_none());
+        assert!(map
+            .router_after
+            .as_ref()
+            .unwrap()
+            .route_from_roads(&map.router_input_after(), r(3), road)
+            .is_none());
+
+        let savefile = map.to_savefile();
+        let mut reloaded = load_osm_xml("simple_four_way_intersection");
+        reloaded.load_savefile(savefile).unwrap();
+        assert!(!reloaded.is_in_driving_graph[&road]);
+        reloaded.rebuild_router(1.0);
+        assert!(reloaded
+            .router_after
+            .as_ref()
+            .unwrap()
+            .route_from_roads(&reloaded.router_input_after(), r(3), road)
+            .is_none());
+    }
+
+    #[test]
+    fn route_comparison_uses_selected_saved_configuration_without_changing_active_edits() {
+        let mut map = load_osm_xml("simple_four_way_intersection");
+        let active_savefile = map.to_savefile();
+
+        map.toggle_driving_graph(r(2));
+        let comparison_savefile = map.to_savefile();
+        map.load_savefile(active_savefile).unwrap();
+
+        let pt1 = map
+            .get_r(r(3))
+            .linestring
+            .point_at_ratio_from_start(&Euclidean, 0.5)
+            .unwrap()
+            .into();
+        let pt2 = map
+            .get_r(r(2))
+            .linestring
+            .point_at_ratio_from_start(&Euclidean, 0.5)
+            .unwrap()
+            .into();
+
+        map.set_comparison_configuration(Some(comparison_savefile))
+            .unwrap();
+        assert!(map.is_in_driving_graph[&r(2)]);
+
+        let GeoJson::FeatureCollection(result) = map.compare_route(pt1, pt2, 1.0) else {
+            panic!("route comparison did not return a FeatureCollection");
+        };
+        let kinds: Vec<_> = result
+            .features
+            .iter()
+            .map(|feature| feature.property("kind").unwrap().as_str().unwrap())
+            .collect();
+        assert_eq!(kinds, vec!["after"]);
+
+        map.set_comparison_configuration(None).unwrap();
+        let GeoJson::FeatureCollection(result) = map.compare_route(pt1, pt2, 1.0) else {
+            panic!("route comparison did not return a FeatureCollection");
+        };
+        let kinds: Vec<_> = result
+            .features
+            .iter()
+            .map(|feature| feature.property("kind").unwrap().as_str().unwrap())
+            .collect();
+        assert_eq!(kinds, vec!["before", "after"]);
     }
 
     #[test]
