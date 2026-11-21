@@ -28,7 +28,10 @@ impl Cell {
         let mut visited = BTreeSet::new();
 
         for start in &neighbourhood.interior_roads {
-            if visited.contains(start) || map.modal_filters.contains_key(start) {
+            if visited.contains(start)
+                || map.modal_filters.contains_key(start)
+                || !map.is_in_driving_graph[start]
+            {
                 continue;
             }
             let start = *start;
@@ -53,6 +56,9 @@ impl Cell {
 
         // Filtered roads right along the perimeter have a tiny cell
         for (r, filter) in &map.modal_filters {
+            if !map.is_in_driving_graph[r] {
+                continue;
+            }
             let road = map.get_r(*r);
             if neighbourhood.border_intersections.contains(&road.src_i) {
                 let mut cell = Cell {
@@ -130,6 +136,9 @@ fn floodfill(map: &MapModel, start: RoadID, neighbourhood: &Neighbourhood) -> Ce
 
             for next in &map.get_i(i).roads {
                 let next_road = map.get_r(*next);
+                if !map.is_in_driving_graph[next] {
+                    continue;
+                }
                 if let Some(ref filter) = map.diagonal_filters.get(&i) {
                     if !filter.allows_movement(&(current.id, *next)) {
                         continue;

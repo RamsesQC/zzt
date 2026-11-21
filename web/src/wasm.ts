@@ -212,6 +212,10 @@ export class Backend {
     this.inner.toggleMainRoad(road);
   }
 
+  toggleDrivingGraph(road: number) {
+    this.inner.toggleDrivingGraph(road);
+  }
+
   setMainRoads(intersections: number[], makeMainRoad: boolean) {
     this.inner.setMainRoads(new Uint32Array(intersections), makeMainRoad);
   }
@@ -401,12 +405,23 @@ export interface RenderNeighbourhoodOutput {
           travel_flow: "forwards" | "backwards" | "both";
           travel_flow_edited: boolean;
           edited: boolean;
+          is_in_driving_graph: boolean;
           road: number;
           cell_color: "disconnected" | "pedestrianized" | number;
           speed_mph: number;
           // Populated by setCellColors, not in the Rust backend
           color: string;
           // TODO Plus all the stuff from Road::to_gj
+        }
+      >
+    | Feature<
+        LineString,
+        {
+          kind: "main_road";
+          road: number;
+          is_in_driving_graph: boolean;
+          speed_mph: number;
+          name?: string;
         }
       >
     | Feature<

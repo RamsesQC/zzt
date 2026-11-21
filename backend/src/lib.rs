@@ -400,6 +400,12 @@ impl LTN {
         self.after_main_road_edit()
     }
 
+    #[wasm_bindgen(js_name = toggleDrivingGraph)]
+    pub fn toggle_driving_graph(&mut self, road: usize) {
+        self.map.toggle_driving_graph(RoadID(road));
+        self.after_edit();
+    }
+
     #[wasm_bindgen(js_name = setMainRoads)]
     pub fn set_main_roads(
         &mut self,
@@ -707,6 +713,7 @@ impl LTN {
         let turn_restrictions = self.map.turn_restrictions.clone();
         let travel_flows = self.map.travel_flows.clone();
         let is_main_road = self.map.is_main_road.clone();
+        let is_in_driving_graph = self.map.is_in_driving_graph.clone();
 
         // Revert to the original
         self.map.modal_filters = self.map.original_modal_filters.clone();
@@ -718,6 +725,9 @@ impl LTN {
         for (r, is_main_road) in &mut self.map.is_main_road {
             *is_main_road = self.map.roads[r.0].is_severance();
         }
+        for is_in_driving_graph in self.map.is_in_driving_graph.values_mut() {
+            *is_in_driving_graph = true;
+        }
 
         // Run the callback
         let output = cb(self);
@@ -728,6 +738,7 @@ impl LTN {
         self.map.turn_restrictions = turn_restrictions;
         self.map.travel_flows = travel_flows;
         self.map.is_main_road = is_main_road;
+        self.map.is_in_driving_graph = is_in_driving_graph;
 
         output
     }

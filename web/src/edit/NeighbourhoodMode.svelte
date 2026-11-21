@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Feature, FeatureCollection, LineString } from "geojson";
   import {
+    Ban,
     Eraser,
     Paintbrush,
     Pointer,
@@ -84,6 +85,7 @@
   type Action =
     | { kind: "filter"; freehand: boolean }
     | { kind: "oneway" }
+    | { kind: "driving-graph" }
     | {
         kind: "turn_restriction";
         from_road_id: number | null;
@@ -164,6 +166,9 @@
       $mutationCounter++;
     } else if (action.kind == "main-roads" && action.tool == "toggle") {
       $backend!.toggleMainRoad(f.properties!.road);
+      $mutationCounter++;
+    } else if (action.kind == "driving-graph") {
+      $backend!.toggleDrivingGraph(f.properties!.road);
       $mutationCounter++;
     } else if (action.kind == "turn_restriction") {
       action.from_road_id = f.properties!.road;
@@ -288,6 +293,9 @@
     if (e.key == "4") {
       action = { kind: "main-roads", tool: "toggle", waypoints: [] };
     }
+    if (e.key == "5") {
+      action = { kind: "driving-graph" };
+    }
   }
 
   function undo() {
@@ -334,7 +342,11 @@
     u_right_to_left: noUTurnRtlUrl,
   };
   $effect(() => {
-    if (action.kind == "oneway" || action.kind == "main-roads") {
+    if (
+      action.kind == "oneway" ||
+      action.kind == "main-roads" ||
+      action.kind == "driving-graph"
+    ) {
       $map!.doubleClickZoom.disable();
     } else {
       $map!.doubleClickZoom.enable();
@@ -499,6 +511,14 @@
           >
             <img src={mainRoadIconUrl} alt="Change main/minor roads" />
           </button>
+          <button
+            onclick={() => (action = { kind: "driving-graph" })}
+            class="icon-btn"
+            class:active={action.kind == "driving-graph"}
+            data-tippy-content="Toggle whether roads are used in driving routes (hotkey 5)"
+          >
+            <Ban aria-label="Toggle driving route eligibility" />
+          </button>
         </div>
         <div
           style="height: 50px; display: flex; justify-content: right; gap: 6px;"
@@ -570,6 +590,12 @@
             To restrict certain turns, first click on the source road, then the
             destination road. Traffic will no longer be able to turn from the
             source road to the destination road.
+          </p>
+        {:else if action.kind == "driving-graph"}
+          <h3>Driving graph</h3>
+          <p>
+            Click a road to include or exclude it from driving routes. Excluded
+            roads remain visible on the map.
           </p>
         {:else if action.kind == "main-roads"}
           <h3>Reclassify main roads</h3>
@@ -735,6 +761,7 @@
         interactive={(action.kind == "filter" && !action.freehand) ||
           action.kind == "oneway" ||
           (action.kind == "main-roads" && action.tool == "toggle") ||
+          action.kind == "driving-graph" ||
           (action.kind == "turn_restriction" && action.from_road_id == null)}
         {onClickLine}
         maxShortcuts={gj.maxShortcuts}
@@ -755,6 +782,9 @@
                   ({printSpeed(props.speed_mph)})
                 </p>
               {/if}
+              {#if !props.is_in_driving_graph}
+                <p><strong>Excluded from driving routes</strong></p>
+              {/if}
               {#if action.kind == "filter"}
                 <div>
                   <img
@@ -768,6 +798,12 @@
                 <p>Click to change direction</p>
               {:else if action.kind == "main-roads" && action.tool == "toggle"}
                 <p>Click to designate a main road or not</p>
+              {:else if action.kind == "driving-graph"}
+                <p>
+                  {props.is_in_driving_graph
+                    ? "Click to exclude from driving routes"
+                    : "Click to include in driving routes"}
+                </p>
               {:else if action.kind == "turn_restriction"}
                 <p>Click to create a turn restriction from here</p>
               {/if}

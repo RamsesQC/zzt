@@ -140,11 +140,41 @@
 
 <LineLayer
   {...layerId(prefix + "interior-roads")}
-  filter={["==", ["get", "kind"], "interior_road"]}
+  filter={[
+    "all",
+    ["==", ["get", "kind"], "interior_road"],
+    ["==", ["get", "is_in_driving_graph"], true],
+  ]}
   paint={{
     "line-width": lineWidth($thickRoadsForShortcuts, maxShortcuts, 0),
     "line-color": interiorRoadLineColor($roadStyle, maxShortcuts),
     "line-opacity": hoverStateFilter(1.0, 0.5),
+  }}
+  layout={{
+    "line-sort-key": ["get", "shortcuts"],
+    visibility: show ? "visible" : "none",
+  }}
+  minzoom={13}
+  onclick={(e) => interactive && onClickLine(e.features[0], e.event.lngLat)}
+  manageHoverState={interactive}
+  hoverCursor={interactive ? "pointer" : undefined}
+>
+  {#if interactive}
+    {@render linePopup?.()}
+  {/if}
+</LineLayer>
+
+<LineLayer
+  {...layerId(prefix + "interior-roads-excluded")}
+  filter={[
+    "all",
+    ["==", ["get", "kind"], "interior_road"],
+    ["==", ["get", "is_in_driving_graph"], false],
+  ]}
+  paint={{
+    "line-width": lineWidth($thickRoadsForShortcuts, maxShortcuts, 0),
+    "line-color": "#a6a6a6",
+    "line-opacity": 1,
   }}
   layout={{
     "line-sort-key": ["get", "shortcuts"],
@@ -175,11 +205,41 @@
 
 <LineLayer
   {...layerId(prefix + "main-roads")}
-  filter={["==", ["get", "kind"], "main_road"]}
+  filter={[
+    "all",
+    ["==", ["get", "kind"], "main_road"],
+    ["==", ["get", "is_in_driving_graph"], true],
+  ]}
   paint={{
     "line-width": lineWidth($thickRoadsForShortcuts, maxShortcuts, 4),
     "line-color": mainRoadLineColor($roadStyle),
     "line-opacity": hoverStateFilter(1.0, 0.5),
+  }}
+  layout={{
+    "line-sort-key": ["get", "shortcuts"],
+    visibility: show ? "visible" : "none",
+  }}
+  minzoom={13}
+  onclick={(e) => interactive && onClickLine(e.features[0], e.event.lngLat)}
+  manageHoverState={interactive}
+  hoverCursor={interactive ? "pointer" : undefined}
+>
+  {#if interactive}
+    {@render linePopup?.()}
+  {/if}
+</LineLayer>
+
+<LineLayer
+  {...layerId(prefix + "main-roads-excluded")}
+  filter={[
+    "all",
+    ["==", ["get", "kind"], "main_road"],
+    ["==", ["get", "is_in_driving_graph"], false],
+  ]}
+  paint={{
+    "line-width": lineWidth($thickRoadsForShortcuts, maxShortcuts, 4),
+    "line-color": "#a6a6a6",
+    "line-opacity": 1,
   }}
   layout={{
     "line-sort-key": ["get", "shortcuts"],

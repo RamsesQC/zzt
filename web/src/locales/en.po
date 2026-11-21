@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-30T11:22:11.838Z\n"
-"PO-Revision-Date: 2025-10-13T14:55:28.463Z\n"
+"PO-Revision-Date: 2026-11-21T21:26:22.058Z\n"
 "Last-Translator: \n"
 "Language: en\n"
 "Language-Team: \n"
@@ -3003,3 +3003,53 @@ msgid ""
 msgstr ""
 "13 October 2025 - fix for animated shortcuts when showing the LTN\n"
 "before edits"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Toggle whether roads are used in driving routes (hotkey 5)"
+msgstr "Toggle whether roads are used in driving routes (hotkey 5)"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Toggle driving route eligibility"
+msgstr "Toggle driving route eligibility"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Driving graph"
+msgstr "Driving graph"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid ""
+"Click a road to include or exclude it from driving routes. Excluded\n"
+"roads remain visible on the map."
+msgstr ""
+"Click a road to include or exclude it from driving routes. Excluded\n"
+"roads remain visible on the map."
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Click to exclude from driving routes"
+msgstr "Click to exclude from driving routes"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Click to include in driving routes"
+msgstr "Click to include in driving routes"
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Excluded from driving routes"
+msgstr "Excluded from driving routes"
+
+#: src/user_guide/Page.svelte
+msgid "Editing driving route eligibility"
+msgstr "Editing driving route eligibility"
+
+#: src/user_guide/Page.svelte
+msgid ""
+"Use the driving graph tool to include or exclude an existing road from\n"
+"driving routes. An excluded road stays visible on the map, but the\n"
+"router will not use it, including as a trip's origin or destination.\n"
+"This differs from a modal filter, which blocks movement at a point on a\n"
+"road."
+msgstr ""
+"Use the driving graph tool to include or exclude an existing road from\n"
+"driving routes. An excluded road stays visible on the map, but the\n"
+"router will not use it, including as a trip's origin or destination.\n"
+"This differs from a modal filter, which blocks movement at a point on a\n"
+"road."

@@ -56,6 +56,8 @@ pub struct MapModel {
     // Every road is filled out
     pub travel_flows: BTreeMap<RoadID, TravelFlow>,
     pub is_main_road: BTreeMap<RoadID, bool>,
+    #[serde(skip)]
+    pub is_in_driving_graph: BTreeMap<RoadID, bool>,
 
     // Not optional, but wrapped for the borrow checker
     #[serde(skip)]
@@ -199,7 +201,10 @@ impl Intersection {
             if to_road.id == from_road.id {
                 return None;
             }
-            if router_input.has_modal_filter(to_road.id) {
+            if router_input.has_modal_filter(to_road.id)
+                || !router_input.is_in_driving_graph(from_road.id)
+                || !router_input.is_in_driving_graph(to_road.id)
+            {
                 return None;
             }
             if router_input
@@ -240,7 +245,10 @@ impl Intersection {
             if from_road.id == to_road.id {
                 return None;
             }
-            if router_input.has_modal_filter(from_road.id) {
+            if router_input.has_modal_filter(from_road.id)
+                || !router_input.is_in_driving_graph(from_road.id)
+                || !router_input.is_in_driving_graph(to_road.id)
+            {
                 return None;
             }
             if router_input
@@ -305,6 +313,9 @@ impl MapModel {
             "finish_loading called twice"
         );
         self.project_details = Some(project_details);
+        for road in &self.roads {
+            self.is_in_driving_graph.entry(road.id).or_insert(true);
+        }
 
         if let Some(context_data_wgs84) = self.serialized_context_data.take() {
             info!("Preparing context data");
@@ -542,6 +553,14 @@ impl MapModel {
         self.after_edited();
     }
 
+    pub fn toggle_driving_graph(&mut self, r: RoadID) {
+        let is_in_driving_graph = !self.is_in_driving_graph[&r];
+        let cmd = self.do_edit(Command::SetDrivingGraph(r, is_in_driving_graph));
+        self.undo_stack.push(cmd);
+        self.redo_stack.clear();
+        self.after_edited();
+    }
+
     pub fn set_main_roads(
         &mut self,
         neighbourhood: &Neighbourhood,
@@ -631,6 +650,12 @@ impl MapModel {
                 info!("changed {r} to now be a main road = {is_main_road}");
                 self.is_main_road.insert(r, is_main_road);
                 Command::SetMainRoad(r, !is_main_road)
+            }
+            Command::SetDrivingGraph(r, is_in_driving_graph) => {
+                let prev = self.is_in_driving_graph[&r];
+                info!("changed {r} in driving graph = {is_in_driving_graph}");
+                self.is_in_driving_graph.insert(r, is_in_driving_graph);
+                Command::SetDrivingGraph(r, prev)
             }
             Command::SetTurnRestrictions(i, mut restrictions) => {
                 std::mem::swap(&mut self.turn_restrictions[i.0], &mut restrictions);
@@ -741,6 +766,12 @@ impl MapModel {
                 f.set_property("is_main_road", self.is_main_road[&r.id]);
                 gj.features.push(f);
             }
+            if !self.is_in_driving_graph[&r.id] {
+                let mut f = self.mercator.to_wgs84_gj(&r.linestring);
+                f.set_property("kind", "driving_graph");
+                f.set_property("is_in_driving_graph", false);
+                gj.features.push(f);
+            }
         }
 
         // Edited turn restrictions only
@@ -816,6 +847,9 @@ impl MapModel {
         for (r, is_main_road) in &mut self.is_main_road {
             *is_main_road = self.roads[r.0].is_severance();
         }
+        for is_in_driving_graph in self.is_in_driving_graph.values_mut() {
+            *is_in_driving_graph = true;
+        }
         self.undo_stack.clear();
         self.redo_stack.clear();
 
@@ -884,6 +918,13 @@ impl MapModel {
                     self.mercator.to_mercator_in_place(&mut linestring);
                     let r = self.most_similar_linestring(&linestring);
                     cmds.push(Command::SetMainRoad(r, is_main_road));
+                }
+                "driving_graph" => {
+                    let is_in_driving_graph = get_bool_prop(&f, "is_in_driving_graph")?;
+                    let mut linestring: LineString = f.geometry.unwrap().try_into()?;
+                    self.mercator.to_mercator_in_place(&mut linestring);
+                    let r = self.most_similar_linestring(&linestring);
+                    cmds.push(Command::SetDrivingGraph(r, is_in_driving_graph));
                 }
                 "turn_restriction" => {
                     let bearing1 = get_f64_prop(&f, "bearing1")?;
@@ -963,6 +1004,10 @@ impl MapModel {
                 self.map.original_modal_filters.get(&r)
             }
 
+            fn is_in_driving_graph(&self, _r: RoadID) -> bool {
+                true
+            }
+
             fn travel_flow(&self, r: RoadID) -> TravelFlow {
                 let road = self.get_r(r);
                 TravelFlow::from_osm(&road.tags)
@@ -1004,6 +1049,10 @@ impl MapModel {
 
             fn modal_filter(&self, r: RoadID) -> Option<&ModalFilter> {
                 self.map.modal_filters.get(&r)
+            }
+
+            fn is_in_driving_graph(&self, r: RoadID) -> bool {
+                self.map.is_in_driving_graph[&r]
             }
 
             fn travel_flow(&self, r: RoadID) -> TravelFlow {
@@ -1404,6 +1453,7 @@ pub enum Command {
     SetDiagonalFilter(IntersectionID, Option<DiagonalFilter>),
     SetTravelFlow(RoadID, TravelFlow),
     SetMainRoad(RoadID, bool),
+    SetDrivingGraph(RoadID, bool),
     SetTurnRestrictions(IntersectionID, Vec<(RoadID, RoadID)>),
     Multiple(Vec<Command>),
 }

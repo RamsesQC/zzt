@@ -395,6 +395,15 @@
         through the entire area.
       </p>
 
+      <h3 id="editing-driving-graph">Editing driving route eligibility</h3>
+      <p>
+        Use the driving graph tool to include or exclude an existing road from
+        driving routes. An excluded road stays visible on the map, but the
+        router will not use it, including as a trip's origin or destination.
+        This differs from a modal filter, which blocks movement at a point on a
+        road.
+      </p>
+
       <h2 id="exploring-effects">Exploring effects</h2>
       <p>
         As you design an LTN, you are already understanding the effects on
