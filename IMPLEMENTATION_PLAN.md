@@ -9,6 +9,7 @@ validated before starting the next.
 
 - Keep the original OSM state distinct from user-saved scenarios. “Show before
   edits” should continue to mean the original, unedited state.
+- Treat a saved configuration as project data, not a rendered MapLibre layer.
 - Reuse the project's GeoJSON persistence and migration patterns where suitable.
 - Make comparisons explicit about which two configurations are being compared.
 - Keep routing behavior and result methodology visible to users, especially
@@ -17,14 +18,15 @@ validated before starting the next.
 
 ## Phase 0: Resolve product behavior
 
-Confirm these details before implementing the features that depend on them:
+The first-slice decisions below are settled; defer the remaining questions
+until the relevant feature is implemented:
 
-- Whether a saved configuration is a snapshot of all editable state or only
-  selected edit types.
-- Whether editing continues in a working copy after saving, and what happens
-  when switching configurations with unsaved edits.
-- Whether scenarios can be duplicated, renamed, and deleted, and whether a
-  configuration can be protected from accidental edits.
+- A snapshot captures the complete editable project state, including
+  neighbourhood definitions and all current edit types.
+- Saving leaves the active configuration editable. Restoring replaces the
+  active editable state and asks for confirmation first.
+- Duplicate configuration names are rejected. Rename, delete, duplicate, and
+  protection controls are deferred.
 - Whether an alley may be used for a trip whose origin or destination is on
   that alley, while disallowing it as a through-route.
 - Whether a road excluded from the driving graph can still serve as a trip's
@@ -40,44 +42,46 @@ before the affected behavior is built.
 
 ## Phase 1: Save and restore named configurations
 
-**First implementation slice.** Add the ability to save the current edits as
-one named configuration, then restore it later. Keep the existing original OSM
-baseline and “Show before edits” behavior unchanged.
+**First implementation slice.** Save a named snapshot of the current editable
+project, persist it through project save/reload, and restore it into the active
+working state. This is snapshot data, not a separate rendered map layer. Keep
+the original OSM baseline and “Show before edits” behavior unchanged.
 
 Scope:
 
-- Define a configuration snapshot that includes all relevant editable state:
+- Capture all editable state already represented by the project savefile:
   modal and diagonal filters, travel flows, turn restrictions, road
-  classifications, and driving-graph eligibility.
-- Persist named snapshots with the project using a backward-compatible
-  savefile/schema change.
-- Add minimal UI to save/name and select/restore a configuration.
-- Establish explicit behavior for unsaved edits when switching.
+  classifications, driving-graph eligibility, and neighbourhood definitions.
+- Persist an optional list of named snapshots with the project GeoJSON so
+  existing projects without snapshots continue to load.
+- Add minimal UI to save/name and select/restore a configuration. Saving
+  continues in the active configuration; restoring replaces its editable state
+  after confirmation.
+- Reject duplicate names for now; defer rename/delete/duplicate management.
 - Preserve existing projects and legacy savefiles through migration or
   compatible defaults.
 
 Acceptance checks:
 
-- A snapshot round-trips through save, reload, and restore with all edit types
-  intact.
+- A named snapshot round-trips through project persistence, reload, and restore
+  with all editable state intact.
 - Existing project savefiles still load and retain their current behavior.
 - Saving or switching a scenario does not change the original OSM baseline.
-- Renaming, duplicate names, and any supported deletion behavior are handled
-  consistently.
+- Duplicate names are rejected, and restoring a snapshot requires confirmation.
 
 ## Phase 2: Road classification and driving-graph eligibility
 
 Rename the editing tool to “Reclassify Road” and extend the current binary
 main-road designation to represent local, main, and alley classifications.
-Also let users include or exclude existing roads from driving routes without
-removing their geometry from the map.
+The separate, undoable and persistent driving-graph eligibility setting for
+existing roads has been implemented; retain it in every saved configuration
+without removing excluded road geometry from the map.
 
 Scope:
 
 - Add an explicit road classification to backend state and project persistence.
 - Update the editor interaction, display, and explanatory text.
-- Add a separate, undoable and persistent driving-graph eligibility setting
-  for existing roads. Keep this distinct from modal filters, which represent
+- Keep driving-graph eligibility distinct from modal filters, which represent
   access restrictions at a point or along a road.
 - Keep excluded road geometry visible and editable on the map; do not introduce
   user-drawn roads as part of this phase.

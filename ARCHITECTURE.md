@@ -68,6 +68,22 @@ sequenceDiagram
   UI->>Storage: Autosave savefile
 ```
 
+### Named configuration snapshots
+
+The project's active editable state remains the current savefile feature
+collection. Named configurations are stored as an optional
+`saved_configurations` foreign member alongside it, with each entry containing
+a name and a captured project savefile. Autosave must preserve this member when
+it replaces the active feature collection. Older projects without the member
+remain valid.
+
+Restoring a configuration loads its captured features against the project's
+current OSM-backed `MapModel`; it does not replace the original routing
+baseline. Consequently, “Show before edits” continues to mean the original
+OSM state. Snapshots are configuration data, not separate MapLibre rendering
+layers. Stable geographic savefile features—not runtime road or intersection
+IDs—identify edits across reloads.
+
 ## Entry points and UI
 
 | Area | Main files | Responsibility |

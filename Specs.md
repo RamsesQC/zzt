@@ -28,6 +28,10 @@ L’utilisateur devrait pouvoir :
 - changer la **Base Compare Layer** ;
 - effectuer des analyses comparatives entre deux configurations sélectionnées, par exemple avec **Impact on One Destination**.
 
+Les configurations enregistrées sont des instantanés de l’état modifiable du projet, et non de nouvelles couches cartographiques. La couche OSM d’origine doit rester distincte et continuer à être utilisée par **« Show Before Edits »**.
+
+Première étape : enregistrer une configuration nommée, recharger le projet et restaurer cette configuration. Après l’enregistrement, l’utilisateur continue à modifier la configuration active. Restaurer un instantané remplace l’état modifiable actif ; l’application demande confirmation avant ce remplacement. Les noms en double sont refusés dans cette première étape ; le renommage et la suppression pourront être ajoutés ultérieurement.
+
 ## 2. Reclassify Road
 
 Renommer l’option actuelle **« Reclassify Main Road »** en **« Reclassify Road »**.

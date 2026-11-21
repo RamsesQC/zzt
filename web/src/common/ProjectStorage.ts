@@ -5,7 +5,7 @@ import type { NeighbourhoodDefinitionFeature } from "../wasm";
 export type ProjectID = ReturnType<(typeof crypto)["randomUUID"]>;
 export type StudyAreaName = string | undefined;
 
-export type UnsavedProjectFeatureCollection = FeatureCollection<
+type ProjectFeatureCollectionData = FeatureCollection<
   Polygon | MultiPolygon
 > & {
   // Foreign Members
@@ -13,6 +13,15 @@ export type UnsavedProjectFeatureCollection = FeatureCollection<
   study_area_name: StudyAreaName;
   app_focus: AppFocus;
   db_schema_version?: number;
+};
+
+export type SavedConfiguration = {
+  name: string;
+  snapshot: ProjectFeatureCollectionData & { db_schema_version: number };
+};
+
+export type UnsavedProjectFeatureCollection = ProjectFeatureCollectionData & {
+  saved_configurations?: SavedConfiguration[];
 };
 
 export type ProjectFeatureCollection = UnsavedProjectFeatureCollection & {
@@ -370,13 +379,57 @@ export class ProjectStorage {
 
   saveProject(projectID: ProjectID, project: ProjectFeatureCollection) {
     let key = this.projectKey(projectID);
+    const projectToSave = { ...project };
 
-    if (!project.study_area_name) {
-      // unify null, undefined, etc.
-      delete project.study_area_name;
+    const existingProjectString = window.localStorage.getItem(key);
+    if (
+      existingProjectString &&
+      projectToSave.saved_configurations === undefined
+    ) {
+      const existingProject = JSON.parse(
+        existingProjectString,
+      ) as ProjectFeatureCollection;
+      projectToSave.saved_configurations = existingProject.saved_configurations;
     }
 
-    window.localStorage.setItem(key, JSON.stringify(project));
+    if (!projectToSave.study_area_name) {
+      // unify null, undefined, etc.
+      delete projectToSave.study_area_name;
+    }
+
+    window.localStorage.setItem(key, JSON.stringify(projectToSave));
+  }
+
+  savedConfigurations(projectID: ProjectID): SavedConfiguration[] {
+    return this.project(projectID).saved_configurations ?? [];
+  }
+
+  saveConfiguration(
+    projectID: ProjectID,
+    name: string,
+    snapshot: ProjectFeatureCollection,
+  ) {
+    const normalizedName = name.trim();
+    if (!normalizedName) {
+      throw new Error("Configuration name cannot be empty.");
+    }
+
+    const project = this.project(projectID);
+    const configurations = project.saved_configurations ?? [];
+    if (
+      configurations.some(
+        (configuration) =>
+          configuration.name.toLowerCase() == normalizedName.toLowerCase(),
+      )
+    ) {
+      throw new Error(`Configuration name already exists: ${normalizedName}`);
+    }
+
+    project.saved_configurations = [
+      ...configurations,
+      { name: normalizedName, snapshot },
+    ];
+    this.saveProject(projectID, project);
   }
 
   removeProject(projectID: ProjectID) {

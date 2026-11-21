@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2025-08-30T11:22:11.897Z\n"
-"PO-Revision-Date: 2026-11-21T21:26:22.065Z\n"
+"PO-Revision-Date: 2026-11-21T21:55:26.219Z\n"
 "Last-Translator: \n"
 "Language: fr\n"
 "Language-Team: \n"
@@ -2565,4 +2565,33 @@ msgid ""
 "router will not use it, including as a trip's origin or destination.\n"
 "This differs from a modal filter, which blocks movement at a point on a\n"
 "road."
+msgstr ""
+
+#: src/user_guide/Page.svelte
+msgid "16 March 2026 - fix for shortcuts when main roads have one-ways (see <0>details</0>)"
+msgstr ""
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Name this configuration"
+msgstr ""
+
+#. placeholder {0}: configuration.name
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore \"{0}\"? This will replace the active edits."
+msgstr ""
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Saved configurations"
+msgstr ""
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Save current configuration"
+msgstr ""
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore configuration: <0><0>Select a saved configuration</0> <1/></0>"
+msgstr ""
+
+#: src/edit/NeighbourhoodMode.svelte
+msgid "Restore selected configuration"
 msgstr ""

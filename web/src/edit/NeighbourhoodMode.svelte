@@ -49,6 +49,7 @@
   import type { Intersection } from "../common/Intersection";
   import { ModalFilterType } from "../common/ModalFilterType";
   import NeighbourhoodBoundarySummary from "../common/NeighbourhoodBoundarySummary.svelte";
+  import type { SavedConfiguration } from "../common/ProjectStorage";
   import {
     CellLayer,
     HighlightBoundaryLayer,
@@ -61,6 +62,8 @@
     animateShortcuts,
     backend,
     currentFilterType,
+    currentNeighbourhoodName,
+    currentProjectID,
     devMode,
     drawBorderEntries,
     hideUnimportantCells,
@@ -68,6 +71,7 @@
     mode,
     mutationCounter,
     printSpeed,
+    projectStorage,
     roadStyle,
     saveCurrentProject,
     showBeforeEdits,
@@ -115,6 +119,14 @@
   let action: Action = $state({ kind: "filter", freehand: false });
 
   let settingFilterType = $state(false);
+  let savedConfigurations = $state<SavedConfiguration[]>([]);
+  let selectedConfigurationName = $state("");
+
+  $effect(() => {
+    savedConfigurations = $currentProjectID
+      ? $projectStorage.savedConfigurations($currentProjectID)
+      : [];
+  });
 
   // TODO Will this run twice the first time?
   let gj = $state($backend!.renderNeighbourhood());
@@ -137,6 +149,74 @@
     gj = $backend!.renderNeighbourhood();
 
     saveCurrentProject();
+  }
+
+  function saveNamedConfiguration() {
+    const name = window.prompt("Name this configuration");
+    if (name == null) {
+      return;
+    }
+
+    try {
+      const projectID = $currentProjectID;
+      if (!projectID) {
+        throw new Error("No project is currently open.");
+      }
+      const snapshot = $backend!.toSavefile();
+      $projectStorage.saveProject(projectID, snapshot);
+      $projectStorage.saveConfiguration(projectID, name, snapshot);
+      savedConfigurations = $projectStorage.savedConfigurations(projectID);
+      selectedConfigurationName = name.trim();
+    } catch (err) {
+      window.alert(`Couldn't save configuration: ${err}`);
+    }
+  }
+
+  function restoreNamedConfiguration() {
+    const configuration = savedConfigurations.find(
+      (saved) => saved.name == selectedConfigurationName,
+    );
+    if (!configuration) {
+      return;
+    }
+    if (
+      !window.confirm(
+        `Restore "${configuration.name}"? This will replace the active edits.`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const neighbourhoodName = boundary.properties.name;
+      const restoredBoundary =
+        configuration.snapshot.features.find(
+          (feature) =>
+            feature.properties?.kind == "boundary" &&
+            feature.properties.name == neighbourhoodName,
+        ) ??
+        configuration.snapshot.features.find(
+          (feature) => feature.properties?.kind == "boundary",
+        );
+      const restoredNeighbourhoodName = restoredBoundary?.properties?.name;
+      if (typeof restoredNeighbourhoodName != "string") {
+        throw new Error("The snapshot has no neighbourhood to restore.");
+      }
+
+      const currentSavefile = $backend!.toSavefile();
+      $backend!.loadSavefile({
+        ...currentSavefile,
+        features: configuration.snapshot.features,
+      });
+      $backend!.setCurrentNeighbourhood(restoredNeighbourhoodName);
+      $currentNeighbourhoodName = restoredNeighbourhoodName;
+      $showBeforeEdits = false;
+      action = { kind: "filter", freehand: false };
+      $mutationCounter++;
+      saveCurrentProject();
+    } catch (err) {
+      window.alert(`Couldn't restore configuration: ${err}`);
+    }
   }
 
   function recalculateShortcuts(
@@ -451,6 +531,33 @@
         />
         Show before edits
       </label>
+    </div>
+    <div
+      style="padding: 8px 0; border-bottom: solid var(--pico-muted-border-color) 1px;"
+    >
+      <h3>Saved configurations</h3>
+      <button class="outline" onclick={saveNamedConfiguration}>
+        Save current configuration
+      </button>
+      <label>
+        Restore configuration:
+        <select
+          bind:value={selectedConfigurationName}
+          disabled={savedConfigurations.length == 0}
+        >
+          <option value="">Select a saved configuration</option>
+          {#each savedConfigurations as configuration (configuration.name)}
+            <option value={configuration.name}>{configuration.name}</option>
+          {/each}
+        </select>
+      </label>
+      <button
+        class="outline"
+        onclick={restoreNamedConfiguration}
+        disabled={!selectedConfigurationName}
+      >
+        Restore selected configuration
+      </button>
     </div>
     <div class:edits-disabled={$showBeforeEdits}>
       <div
